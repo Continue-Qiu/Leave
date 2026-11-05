@@ -1,3 +1,7 @@
+// ===== config =====
+// ===== 常量与共享状态 =====
+// 本文件只声明常量与跨模块共享的可变状态，供后续 classic script 直接访问。
+
 // ===== 模拟用户数据 =====
 const DEFAULT_AVATAR_URL = 'https://photo.chaoxing.com/p/323291431_50';
 const DEFAULT_COUNSELOR_AVATAR_URL = 'https://photo.chaoxing.com/p/306359839_50';
@@ -50,41 +54,13 @@ let confirmedVisibleFieldIds = new Set();
 let draftVisibleFieldIds = new Set();
 let fieldVisibilityLastFocused = null;
 let fieldVisibilityBodyOverflow = '';
-
-// ===== 初始化 =====
 let facePhotoDataUrl = DEFAULT_FACE_PHOTO_URL;
 let signatureDataUrl = DEFAULT_SIGNATURE_URL;
 
-(function init() {
-  // 公开仓库不预置面部照片和签名图片
-  facePhotoFile = null;
-  clearFacePhotoUi();
-  clearSignatureUi();
+// ===== cache =====
+// ===== 表单缓存与本地存储 =====
+// 依赖 config.js 中的常量与共享状态。
 
-  // 设置默认申请日期（昨天）
-  const now = new Date();
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-  document.getElementById('applyDateInput').value = yesterdayStr;
-  document.getElementById('applyDateDispText').textContent = yesterdayStr;
-
-  // 设置默认开始/结束时间（今天12:00到18:00）
-  const todayStr = now.toISOString().split('T')[0];
-  const startStr = todayStr + 'T12:00';
-  const endStr   = todayStr + 'T18:00';
-  document.getElementById('startTimeInput').value = startStr;
-  document.getElementById('endTimeInput').value = endStr;
-  document.getElementById('startTimeDispText').textContent = startStr.replace('T',' ');
-  document.getElementById('endTimeDispText').textContent = endStr.replace('T',' ');
-  calcDuration();
-  loadFormCache();
-  bindFormCache();
-  bindAvatarUploads();
-  bindFieldVisibilityPicker();
-})();
-
-// ===== 表单缓存 =====
 function readFormCache() {
   try {
     var raw = localStorage.getItem(FORM_CACHE_KEY);
@@ -255,6 +231,10 @@ function compressImageForCache(dataUrl, callback) {
   img.src = dataUrl;
 }
 
+// ===== media =====
+// ===== 媒体资源：头像、面部照片、签名与图片查看 =====
+// 依赖 config.js 中的常量与共享状态，以及 cache.js 中的缓存工具函数。
+
 // ===== 自定义头像 =====
 function bindAvatarUploads() {
   bindAvatarUpload('avatarPreview', 'avatarUploadInput', 'student');
@@ -325,36 +305,6 @@ function applyCustomAvatar(which, dataUrl) {
   document.getElementById('detailAvatar').src = currentUser.avatar;
 }
 
-// ===== 显示/隐藏编辑控件 =====
-function showEditMode() {
-  var formDetail = document.getElementById('forms-detail');
-  if (formDetail) formDetail.classList.add('form-detail--footer-space');
-
-  // 宿舍号
-  document.getElementById('dormDisplay').style.display = 'none';
-  document.getElementById('dormInput').style.display = '';
-  // 请假类型
-  document.getElementById('leaveTypeDisplay').style.display = 'none';
-  document.getElementById('leaveTypeDetailDisplay').style.display = 'none';
-  document.getElementById('leaveTypeEdit').style.display = '';
-  // 是否出校/市/省
-  document.getElementById('leaveCampusDisplay').style.display = 'none';
-  document.getElementById('leaveCampusEdit').style.display = '';
-  document.getElementById('leaveCityDisplay').style.display = 'none';
-  document.getElementById('leaveCityEdit').style.display = '';
-  document.getElementById('leaveProvinceDisplay').style.display = 'none';
-  document.getElementById('leaveProvinceEdit').style.display = '';
-  // 时间
-  document.getElementById('startTimeDisplay').style.display = 'none';
-  document.getElementById('startTimeInput').style.display = '';
-  document.getElementById('endTimeDisplay').style.display = 'none';
-  document.getElementById('endTimeInput').style.display = '';
-  // 申请时间
-  document.getElementById('applyDateDisplay').style.display = 'none';
-  document.getElementById('applyDateInput').style.display = '';
-}
-showEditMode();
-
 // ===== 面部照片上传 =====
 function handleFacePhoto(files) {
   if (!files || !files[0]) return;
@@ -376,20 +326,10 @@ function handleFacePhoto(files) {
   };
   reader.readAsDataURL(file);
 }
+
 function removeFacePhoto() {
   clearFacePhotoUi();
   saveFormCache();
-}
-
-// ===== 时长计算 =====
-function calcDuration() {
-  const start = document.getElementById('startTimeInput').value;
-  const end = document.getElementById('endTimeInput').value;
-  if (!start || !end) { document.getElementById('durationDisplay').textContent = '0'; return; }
-  const diffMs = new Date(end) - new Date(start);
-  if (diffMs <= 0) { document.getElementById('durationDisplay').textContent = '时间错误'; return; }
-  const days = diffMs / (1000 * 60 * 60 * 24);
-  document.getElementById('durationDisplay').textContent = days.toFixed(1);
 }
 
 // ===== 签名 =====
@@ -429,6 +369,7 @@ function openSignaturePad() {
   };
   popup.addEventListener('click', function(e) { if (e.target === popup) document.body.removeChild(popup); });
 }
+
 function removeSignature() {
   clearSignatureUi();
   saveFormCache();
@@ -505,11 +446,13 @@ function viewFacePhoto() {
   var src = facePhotoDataUrl || DEFAULT_FACE_PHOTO_URL;
   showImageViewer(src);
 }
+
 function viewSignature() {
   var src = signatureDataUrl || DEFAULT_SIGNATURE_URL;
   if (!src) return;
   showImageViewer(src);
 }
+
 function showImageViewer(src) {
   var overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;';
@@ -517,6 +460,59 @@ function showImageViewer(src) {
   overlay.addEventListener('click', function(){ document.body.removeChild(overlay); });
   document.body.appendChild(overlay);
 }
+
+// ===== form =====
+// ===== 表单计算、头部信息同步与提示 =====
+// 依赖 config.js 中的共享状态。
+
+// ===== 时长计算 =====
+function calcDuration() {
+  const start = document.getElementById('startTimeInput').value;
+  const end = document.getElementById('endTimeInput').value;
+  if (!start || !end) { document.getElementById('durationDisplay').textContent = '0'; return; }
+  const diffMs = new Date(end) - new Date(start);
+  if (diffMs <= 0) { document.getElementById('durationDisplay').textContent = '时间错误'; return; }
+  const days = diffMs / (1000 * 60 * 60 * 24);
+  document.getElementById('durationDisplay').textContent = days.toFixed(1);
+}
+
+function syncName(val) {
+  currentUser.name = val;
+  document.getElementById('detailName').textContent = val;
+  document.getElementById('detailTitle').textContent = val + '的请假';
+  document.getElementById('avatarPreview').alt = val;
+}
+
+function syncHeaderInfo() {
+  var sno = document.getElementById('studentIdInput').value;
+  var dept = document.getElementById('deptInput').value;
+  var major = document.getElementById('majorInput').value;
+  var cls = document.getElementById('classNameInput').value;
+  currentUser.sno = sno;
+  currentUser.dept = dept;
+  currentUser.major = major;
+  currentUser.className = cls;
+  document.getElementById('detailSno').textContent = sno;
+  document.getElementById('detailDept').textContent = '学生\\' + dept + '\\' + major + '\\' + cls;
+}
+
+function syncCounselorName(val) {
+  currentUser.counselorName = val;
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast-real');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast-real';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+// ===== detail =====
+// ===== 提交演示、详情模式与数据日志 =====
+// 依赖 config.js 中的共享状态，以及 form.js / cache.js 中的工具函数。
 
 // ===== 表单提交 =====
 function handleSubmit() {
@@ -861,36 +857,157 @@ function handleCancel() {
   }
 }
 
-function syncName(val) {
-  currentUser.name = val;
-  document.getElementById('detailName').textContent = val;
-  document.getElementById('detailTitle').textContent = val + '的请假';
-  document.getElementById('avatarPreview').alt = val;
+// ===== main =====
+// ===== 初始化与事件绑定 =====
+// 依赖 config.js / cache.js / media.js / form.js / detail.js 中声明的常量与函数。
+
+// ===== 显示/隐藏编辑控件 =====
+function showEditMode() {
+  var formDetail = document.getElementById('forms-detail');
+  if (formDetail) formDetail.classList.add('form-detail--footer-space');
+
+  // 宿舍号
+  document.getElementById('dormDisplay').style.display = 'none';
+  document.getElementById('dormInput').style.display = '';
+  // 请假类型
+  document.getElementById('leaveTypeDisplay').style.display = 'none';
+  document.getElementById('leaveTypeDetailDisplay').style.display = 'none';
+  document.getElementById('leaveTypeEdit').style.display = '';
+  // 是否出校/市/省
+  document.getElementById('leaveCampusDisplay').style.display = 'none';
+  document.getElementById('leaveCampusEdit').style.display = '';
+  document.getElementById('leaveCityDisplay').style.display = 'none';
+  document.getElementById('leaveCityEdit').style.display = '';
+  document.getElementById('leaveProvinceDisplay').style.display = 'none';
+  document.getElementById('leaveProvinceEdit').style.display = '';
+  // 时间
+  document.getElementById('startTimeDisplay').style.display = 'none';
+  document.getElementById('startTimeInput').style.display = '';
+  document.getElementById('endTimeDisplay').style.display = 'none';
+  document.getElementById('endTimeInput').style.display = '';
+  // 申请时间
+  document.getElementById('applyDateDisplay').style.display = 'none';
+  document.getElementById('applyDateInput').style.display = '';
 }
 
-function syncHeaderInfo() {
-  var sno = document.getElementById('studentIdInput').value;
-  var dept = document.getElementById('deptInput').value;
-  var major = document.getElementById('majorInput').value;
-  var cls = document.getElementById('classNameInput').value;
-  currentUser.sno = sno;
-  currentUser.dept = dept;
-  currentUser.major = major;
-  currentUser.className = cls;
-  document.getElementById('detailSno').textContent = sno;
-  document.getElementById('detailDept').textContent = '学生\\' + dept + '\\' + major + '\\' + cls;
+// ===== 页面初始化 =====
+function initSimulationPage() {
+  // 公开仓库不预置面部照片和签名图片
+  facePhotoFile = null;
+  clearFacePhotoUi();
+  clearSignatureUi();
+
+  // 设置默认申请日期（昨天）
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  document.getElementById('applyDateInput').value = yesterdayStr;
+  document.getElementById('applyDateDispText').textContent = yesterdayStr;
+
+  // 设置默认开始/结束时间（今天12:00到18:00）
+  const todayStr = now.toISOString().split('T')[0];
+  const startStr = todayStr + 'T12:00';
+  const endStr   = todayStr + 'T18:00';
+  document.getElementById('startTimeInput').value = startStr;
+  document.getElementById('endTimeInput').value = endStr;
+  document.getElementById('startTimeDispText').textContent = startStr.replace('T',' ');
+  document.getElementById('endTimeDispText').textContent = endStr.replace('T',' ');
+  calcDuration();
+  loadFormCache();
+  bindFormCache();
+  bindAvatarUploads();
+  bindFieldVisibilityPicker();
 }
 
-function syncCounselorName(val) {
-  currentUser.counselorName = val;
+// ===== 事件绑定 =====
+function bindPageEvents() {
+  // 姓名
+  var studentNameInput = document.getElementById('studentNameInput');
+  if (studentNameInput) {
+    studentNameInput.addEventListener('input', function() { syncName(this.value); });
+  }
+
+  // 学号 / 院系 / 专业 / 班级
+  ['studentIdInput', 'deptInput', 'majorInput', 'classNameInput'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() { syncHeaderInfo(); });
+  });
+
+  // 辅导员姓名
+  var counselorNameInput = document.getElementById('counselorNameInput');
+  if (counselorNameInput) {
+    counselorNameInput.addEventListener('input', function() { syncCounselorName(this.value); });
+  }
+
+  // 请假开始/结束时间
+  ['startTimeInput', 'endTimeInput'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', calcDuration);
+  });
+
+  // 面部照片上传
+  var faceUploadInput = document.querySelector('#faceUploadBtn .upload_trigger_input');
+  if (faceUploadInput) {
+    faceUploadInput.addEventListener('change', function() { handleFacePhoto(this.files); });
+  }
+
+  // 面部照片文件列表：点击查看，删除按钮移除
+  var faceFileItem = document.getElementById('faceFileItem');
+  if (faceFileItem) {
+    var faceFileType = faceFileItem.querySelector('.upload_file_type');
+    if (faceFileType) faceFileType.addEventListener('click', viewFacePhoto);
+    var faceFileData = faceFileItem.querySelector('.upload_file_data');
+    if (faceFileData) faceFileData.addEventListener('click', viewFacePhoto);
+    var faceFileDelete = faceFileItem.querySelector('.upload_file_download');
+    if (faceFileDelete) {
+      faceFileDelete.addEventListener('click', function(event) {
+        event.stopPropagation();
+        removeFacePhoto();
+      });
+    }
+  }
+
+  // 详情模式下的面部照片：点击查看、下载
+  var facePhotoDetailItem = document.querySelector('#facePhotoDetail .upload_file_per');
+  if (facePhotoDetailItem) facePhotoDetailItem.addEventListener('click', viewFacePhoto);
+  var facePhotoDownload = document.getElementById('facePhotoDownload');
+  if (facePhotoDownload) facePhotoDownload.addEventListener('click', downloadFacePhoto);
+
+  // 签名区域
+  var signatureLeft = document.querySelector('#signatureAutograph .agh_left');
+  if (signatureLeft) signatureLeft.addEventListener('click', openSignaturePad);
+  var signatureRewrite = document.querySelector('#signatureAutograph .agh_rewrite');
+  if (signatureRewrite) {
+    signatureRewrite.addEventListener('click', function(event) {
+      event.stopPropagation();
+      openSignaturePad();
+    });
+  }
+  var signatureDelete = document.querySelector('#signatureAutograph .agh_del');
+  if (signatureDelete) {
+    signatureDelete.addEventListener('click', function(event) {
+      event.stopPropagation();
+      removeSignature();
+    });
+  }
+
+  // 底部按钮
+  var cancelBtn = document.querySelector('.footer-btn-cancel');
+  if (cancelBtn) cancelBtn.addEventListener('click', handleCancel);
+  var submitBtn = document.getElementById('submitBtn');
+  if (submitBtn) submitBtn.addEventListener('click', handleSubmit);
 }
 
-function showToast(msg) {
-  const existing = document.querySelector('.toast-real');
-  if (existing) existing.remove();
-  const toast = document.createElement('div');
-  toast.className = 'toast-real';
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2000);
+function startSimulation() {
+  initSimulationPage();
+  showEditMode();
+}
+
+bindPageEvents();
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startSimulation);
+} else {
+  startSimulation();
 }
