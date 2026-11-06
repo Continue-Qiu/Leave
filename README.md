@@ -2,7 +2,7 @@
 
 用于自动提交学习通 / 超星 OA 的请假与销假申请。
 
-本仓库是公开版模板，不包含 Cookie、抓包文件、照片、定位、姓名、学号等个人敏感信息。运行所需的私密参数通过 GitHub Actions Secrets 或本地环境变量提供。
+本仓库是可分发的模板，不包含 Cookie、抓包文件、照片、定位、姓名、学号等个人敏感信息。运行所需的私密参数通过 GitHub Actions Secrets 或本地环境变量提供。
 
 ## 功能
 
@@ -13,6 +13,7 @@
   - 销假时间：运行时北京时间
 - 支持 GitHub Actions 定时运行
 - 支持本地手动运行
+- 运行日志边跑边打到终端，同时追加写入仓库根目录的 `submit.log`（已被 `.gitignore` 的 `*.log` 忽略）
 - 提供模拟请假页面
   - 可在浏览器中填写、上传面部照片、手写签名并模拟提交
   - 自动缓存除时间/日期外的填写内容，以及上传照片和签名
@@ -27,12 +28,13 @@
 │   ├── leave.yml              # 请假定时任务
 │   └── cancel.yml             # 销假定时任务
 ├── docs/
-│   ├── index.html             # 公开说明页
+│   ├── index.html             # 说明页
 │   └── simulation/
 │       ├── index.html         # 模拟请假页面结构；不预置照片或签名图片
 │       ├── simulation.css     # 模拟页样式
 │       └── simulation.js      # 模拟页交互、缓存和提交演示逻辑
 ├── .gitignore
+├── submit.log                 # 本地运行后自动生成，已被 .gitignore 忽略
 └── README.md
 ```
 
@@ -63,6 +65,8 @@ Settings → Secrets and variables → Actions → New repository secret
 | `CANCEL_LAT` | 销假定位纬度 |
 | `CANCEL_LNG` | 销假定位经度 |
 | `CANCEL_ADDRESS` | 销假定位地址 |
+| `CX_UID` | 可选；Cookie 中取不到用户 UID 时手工指定 |
+| `CX_NAME` | 可选；Cookie 中取不到真实姓名时手工指定 |
 
 ### `CHAOXING_COOKIES`
 
@@ -84,7 +88,7 @@ key1=value1; key2=value2; key3=value3
 0123456789abcdef0123456789abcdef
 ```
 
-脚本会根据 `objectId` 自动生成图片地址。不要把本人照片或 `objectId` 直接提交到公开仓库。
+脚本会根据 `objectId` 自动生成图片地址。不要把本人照片或 `objectId` 直接提交到仓库。
 
 如果云盘接口无法返回图片详情，脚本会继续使用兜底名称 `photo.jpg`。如需指定名称，可添加可选 Secret `PHOTO_FILE_NAME`，例如 `IMG_5323.jpg`。
 
@@ -106,11 +110,29 @@ CANCEL_LNG=117.000000
 CANCEL_ADDRESS=山东省济南市...
 ```
 
+### `CX_UID` / `CX_NAME`（可选兜底）
+
+脚本默认从 Cookie 或 `cookie/userinfo` 接口里推断用户 UID 和真实姓名；两处都取不到时会直接报错退出，避免把姓名提交成占位符「姓名」。
+
+如果 Cookie 精简过、缺了这几个字段，可以在本地运行时直接给环境变量：
+
+```bash
+CX_UID='1234567' \
+CX_NAME='张三' \
+PHOTO_OBJECT_ID='32 位 objectId' bash leave.sh
+```
+
+`leave.sh` 两个变量都读，`cancel.sh` 只读 `CX_UID`。
+
+注意：GitHub Actions 的 `leave.yml` / `cancel.yml` 目前的 `env` 段**没有**透传这两个变量，所以只在仓库 Secrets 里新建 `CX_UID` / `CX_NAME` 是不生效的——需要在对应 workflow 的 `env:` 下补上同名映射，才会传给脚本。
+
 ## 模拟请假页面
 
 打开 `docs/simulation` 可以在浏览器里模拟请假表单填写与提交，适合提前检查页面展示效果。
 
-公开仓库不预置默认照片或签名图片。首次打开时需要自行上传面部照片并手写签名；完成后这些内容会缓存在当前浏览器中，下次打开同一页面会自动恢复。页面中的个人头像和辅导员头像也支持点击替换。
+仓库不预置默认照片或签名图片，首次打开时需要自行上传面部照片并手写签名；完成后这些内容会缓存在当前浏览器中，下次打开同一页面会自动恢复。
+
+页面里的个人头像和辅导员头像默认用的是超星 CDN 上的示例图（地址形如 `https://photo.chaoxing.com/p/<编号>_50`），不是仓库内的图片文件；点一下头像即可换成自己的，换完也只存在当前浏览器里。这些示例编号不属于敏感数据，但如果想让仓库彻底干净，建议保持 private，或把默认值改成自己的占位图。
 
 页面资源已拆分为 `index.html`、`simulation.css` 和 `simulation.js`。样式文件只保留模拟页需要的表单、上传、签名、审批流程和自定义控件样式；本地小图标资源以内嵌 data URI 保存在 CSS 中，避免额外维护 assets 目录。提交后可通过数据日志右侧图标筛选上方详情表单中显示的字段；其中“审批操作”仅控制数据日志中的审批操作卡，不影响上方流程、数据日志区域或创建记录。该显示设置仅在当前页面会话中生效，不会写入本地缓存。
 
@@ -137,7 +159,7 @@ CANCEL_ADDRESS=山东省济南市...
 
 ## 本地敏感文件
 
-本地调试时可能会用到 Cookie、抓包文件或照片，这些都不要提交到公开仓库：
+本地调试时可能会用到 Cookie、抓包文件或照片，这些都不要提交到仓库：
 
 - `cookies`：本地 Cookie 文件，脚本会自动读取
 - `har/`：本地抓包文件统一存放目录，建议按用途命名，例如 `har/leave-office.chaoxing.com.har`、`har/cancel-office.chaoxing.com.har`
@@ -148,6 +170,11 @@ CANCEL_ADDRESS=山东省济南市...
 ## 本地运行
 
 ### 安装依赖
+
+前提条件：
+
+- **Python 3**：脚本本身是 bash，真正的接口调用由内嵌的 Python 完成，GitHub Actions 里用的是 3.11。
+- **bash**：Windows 用户请用 Git Bash 运行；系统自带的 Windows Store 版 `python3` 是坏的空壳，脚本会自动回退到 `python`，两个都没有会直接报错退出。
 
 ```bash
 pip install pycryptodome

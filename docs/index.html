@@ -227,12 +227,12 @@
       <span class="badge">GitHub Actions · 学习通 OA 自动化</span>
       <h1>自动提交请假与销假申请</h1>
       <p class="lead">
-        一个公开仓库友好的自动化模板：脚本不保存 Cookie、定位、照片或个人预填信息，所有敏感参数都通过 Secrets / 环境变量注入。
+        一个可分发的自动化模板：脚本不保存 Cookie、定位、照片或个人预填信息，所有敏感参数都通过 Secrets / 环境变量注入。
       </p>
       <div class="actions">
         <a class="button primary" href="simulation">模拟请假页面</a>
-        <a class="button" href="https://github.com/Fan1K413/chaoxing-leave#readme">查看 README</a>
-        <a class="button" href="https://github.com/Fan1K413/chaoxing-leave">GitHub 仓库</a>
+        <a class="button" href="https://github.com/Continue-Qiu/Leave#readme">查看 README</a>
+        <a class="button" href="https://github.com/Continue-Qiu/Leave">GitHub 仓库</a>
       </div>
     </div>
   </header>
@@ -252,7 +252,7 @@
 
       <article class="card">
         <h2>模拟请假页面</h2>
-        <p class="muted">用于在浏览器里预览请假表单、上传照片、手写签名并模拟提交；只做本地展示，不会调用真实提交接口，也不预置照片或签名图片。</p>
+        <p class="muted">用于在浏览器里预览请假表单、上传照片、手写签名并模拟提交；只做本地展示，不会调用真实提交接口，也不预置照片或签名图片。个人与辅导员头像默认指向超星 CDN 上的示例图（仓库内不含图片文件），点击头像即可替换。</p>
         <ul class="list">
           <li>入口：<code>docs/simulation</code></li>
           <li>自动缓存：姓名、学号、宿舍、辅导员、请假类型等非时间字段</li>
@@ -293,7 +293,7 @@
           </tr>
           <tr>
             <td><code>PHOTO_OBJECT_ID</code></td>
-            <td>请假面部照片上传后返回的 32 位 <code>objectId</code>。脚本会尝试获取原始附件信息，失败时使用 <code>PHOTO_FILE_NAME</code>（默认 <code>photo.jpg</code>）；不要把照片或 ID 提交到公开仓库。</td>
+            <td>请假面部照片上传后返回的 32 位 <code>objectId</code>。脚本会尝试获取原始附件信息，失败时使用 <code>PHOTO_FILE_NAME</code>（默认 <code>photo.jpg</code>）；不要把照片或 ID 提交到仓库。</td>
           </tr>
           <tr>
             <td><code>PHOTO_FILE_NAME</code></td>
@@ -311,9 +311,18 @@
             <td><code>CANCEL_ADDRESS</code></td>
             <td>销假定位地址。</td>
           </tr>
+          <tr>
+            <td><code>CX_UID</code></td>
+            <td>可选兜底；Cookie 或 <code>cookie/userinfo</code> 里取不到用户 UID 时手工指定。本地运行直接给环境变量，Actions 里还需在 workflow 的 <code>env:</code> 段透传。</td>
+          </tr>
+          <tr>
+            <td><code>CX_NAME</code></td>
+            <td>可选兜底；取不到真实姓名时手工指定，避免姓名提交成占位符「姓名」。<code>cancel.sh</code> 只读 <code>CX_UID</code>。</td>
+          </tr>
         </tbody>
       </table>
       <p class="muted">可选 Secret <code>PHOTO_FILE_NAME</code> 默认为 <code>photo.jpg</code>，用于云盘详情查询失败时的附件名称。可选环境变量 <code>secrets_mode</code> 默认为 <code>0</code>；设为 <code>1</code> 后隐藏个人资料、签名链接、用户编码、时间明细、审批 ID 和原始接口响应。GitHub Actions 中通过同名仓库变量设置。</p>
+      <p class="muted">运行前置条件：Python 3（Actions 里用 3.11）与 bash；Windows 请在 Git Bash 中执行，系统自带的 Windows Store 版 <code>python3</code> 不可用。</p>
     </section>
 
     <section class="grid">
@@ -364,7 +373,7 @@ bash cancel.sh</code></pre>
   </main>
 
   <footer>
-    <div class="container">公开模板仅保留自动化逻辑；敏感参数请始终放在 Secrets 中。</div>
+    <div class="container">模板仅保留自动化逻辑；敏感参数请始终放在 Secrets 中。</div>
   </footer>
 </body>
 </html>
