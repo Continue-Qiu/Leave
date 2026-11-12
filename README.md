@@ -108,7 +108,7 @@ key1=value1; key2=value2; key3=value3
 ```text
 CANCEL_LAT=36.000000
 CANCEL_LNG=117.000000
-CANCEL_ADDRESS=山东省济南市...
+CANCEL_ADDRESS=XX省XX市...
 ```
 
 ### `CX_UID` / `CX_NAME`（可选兜底）
